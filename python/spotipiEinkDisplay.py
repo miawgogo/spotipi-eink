@@ -239,22 +239,27 @@ class SpotipiEinkDisplay:
             else:
                 # no need to repeat just crop
                 image_new = image.crop((0, 0, self.config.getint('DEFAULT', 'width'), self.config.getint('DEFAULT', 'height')))
-        if self.config.getboolean('DEFAULT', 'album_cover_small'):
-            cover_smaller = image.resize([album_cover_small_px, album_cover_small_px], Image.LANCZOS)
-            album_pos_x = (self.config.getint('DEFAULT', 'width') - album_cover_small_px) // 2
-            image_new.paste(cover_smaller, [album_pos_x, offset_px_top])
         font_title = ImageFont.truetype(self.config.get('DEFAULT', 'font_path'), self.config.getint('DEFAULT', 'font_size_title'))
         font_artist = ImageFont.truetype(self.config.get('DEFAULT', 'font_path'), self.config.getint('DEFAULT', 'font_size_artist'))
+        space_taken=0
         if text_direction == 'top-down':
             title_position_y = album_cover_small_px + offset_px_top + 10
             title_height = self._fit_text_top_down(img=image_new, text=title, text_color='white', shadow_text_color='black', font=font_title, font_size=self.config.getint('DEFAULT', 'font_size_title'), y_offset=title_position_y, x_start_offset=offset_px_left, x_end_offset=offset_px_right, offset_text_px_shadow=offset_text_px_shadow)
             artist_position_y = album_cover_small_px + offset_px_top + 10 + title_height
-            self._fit_text_top_down(img=image_new, text=artist, text_color='white', shadow_text_color='black', font=font_artist, font_size=self.config.getint('DEFAULT', 'font_size_artist'), y_offset=artist_position_y, x_start_offset=offset_px_left, x_end_offset=offset_px_right, offset_text_px_shadow=offset_text_px_shadow)
+            artist_height = self._fit_text_top_down(img=image_new, text=artist, text_color='white', shadow_text_color='black', font=font_artist, font_size=self.config.getint('DEFAULT', 'font_size_artist'), y_offset=artist_position_y, x_start_offset=offset_px_left, x_end_offset=offset_px_right, offset_text_px_shadow=offset_text_px_shadow)
         if text_direction == 'bottom-up':
             artist_position_y = self.config.getint('DEFAULT', 'height') - (offset_px_bottom + self.config.getint('DEFAULT', 'font_size_artist'))
             artist_height = self._fit_text_bottom_up(img=image_new, text=artist, text_color='white', shadow_text_color='black', font=font_artist, font_size=self.config.getint('DEFAULT', 'font_size_artist'), y_offset=artist_position_y, x_start_offset=offset_px_left, x_end_offset=offset_px_right, offset_text_px_shadow=offset_text_px_shadow)
             title_position_y = self.config.getint('DEFAULT', 'height') - (offset_px_bottom + self.config.getint('DEFAULT', 'font_size_title')) - artist_height
-            self._fit_text_bottom_up(img=image_new, text=title, text_color='white', shadow_text_color='black', font=font_title, font_size=self.config.getint('DEFAULT', 'font_size_title'), y_offset=title_position_y, x_start_offset=offset_px_left, x_end_offset=offset_px_right, offset_text_px_shadow=offset_text_px_shadow)
+            title_height = self._fit_text_bottom_up(img=image_new, text=title, text_color='white', shadow_text_color='black', font=font_title, font_size=self.config.getint('DEFAULT', 'font_size_title'), y_offset=title_position_y, x_start_offset=offset_px_left, x_end_offset=offset_px_right, offset_text_px_shadow=offset_text_px_shadow)
+        space_taken= self.config.getint('DEFAULT', 'height') - (offset_px_bottom + artist_height+title_height + offset_px_top)
+        
+        if self.config.getboolean('DEFAULT', 'album_cover_small'):
+            if self.config.getboolean('DEFAULT', 'album_cover_small_auto'):
+                album_cover_small_px=space_taken-offset_px_top
+            cover_smaller = image.resize([album_cover_small_px, album_cover_small_px], Image.LANCZOS)   
+            album_pos_x = (self.config.getint('DEFAULT', 'width') - album_cover_small_px) // 2
+            image_new.paste(cover_smaller, [album_pos_x, offset_px_top])
         return image_new
 
     def _display_update_process(self, song_request: list):
